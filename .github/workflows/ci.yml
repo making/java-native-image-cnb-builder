@@ -1,0 +1,71 @@
+name: CI
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+    branches:
+    - master
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Docker Login
+      env:
+        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      run: |
+        docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}
+    - name: Install Pack
+      env:
+        PACK_VERSION: 0.12.0
+      run: |
+        wget -q https://github.com/buildpacks/pack/releases/download/v${PACK_VERSION}/pack-v${PACK_VERSION}-linux.tgz
+        tar xzf pack-*.tgz
+        rm -f pack-*.tgz
+        sudo install pack /usr/local/bin/pack
+    - name: Create Builder
+      run: |
+        pack create-builder -v -c builder.toml making/java-native-image-cnb-builder-test:${GITHUB_SHA}
+    - name: Set up Java
+      uses: actions/setup-java@v1
+      with:
+        java-version: 11.x
+    - name: Create a sample project
+      run: |
+        curl https://start.spring.io/starter.tgz \
+          -s \
+          -d javaVersion=11 \
+          -d artifactId=hello \
+          -d baseDir=hello \
+          -d dependencies=webflux,actuator \
+          -d packageName=com.example \
+          -d applicationName=HelloApplication | tar -xzvf -
+        sed -i 's/@SpringBootApplication/@SpringBootApplication(proxyBeanMethods = false)/' hello/src/main/java/com/example/HelloApplication.java
+    - name: Cache Maven
+      uses: actions/cache@v1
+      with:
+        path: ~/.m2/repository
+        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-maven-
+    - name: Build the sample project
+      run: |
+        cd hello
+        ./mvnw package -DskipTests
+    - name: Test Builder
+      run: |
+        pack build foo \
+          --builder making/java-native-image-cnb-builder-test:${GITHUB_SHA} \
+          --path hello/target/hello*.jar \
+          -e BP_BOOT_NATIVE_IMAGE=1
+        docker images
+        docker run --rm \
+          -m 128m \
+          -e SPRING_MAIN_WEB_APPLICATION_TYPE=none \
+          foo
+    - name: Publish Builder
+      if: github.ref == 'refs/heads/master'
+      run: |
+        pack create-builder -v -c builder.toml making/java-native-image-cnb-builder --publish

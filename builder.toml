@@ -1,0 +1,14 @@
+[[buildpacks]]
+id = "paketo-buildpacks/java-native-image"
+version = "2.5.0"
+image = "gcr.io/paketo-buildpacks/java-native-image:2.5.0"
+
+[[order]]
+group = [
+    { id = "paketo-buildpacks/java-native-image", version = "2.5.0" }
+]
+
+[stack]
+id = "io.buildpacks.stacks.bionic"
+run-image = "gcr.io/paketo-buildpacks/run:base-cnb"
+build-image = "gcr.io/paketo-buildpacks/build:base-cnb"
