@@ -27,7 +27,7 @@ cd hello
 
 pack build foo \
   --builder making/java-native-image-cnb-builder-test:${GITHUB_SHA} \
-  --path hello/target/hello*.jar \
+  --path target/hello*.jar \
   -e BP_BOOT_NATIVE_IMAGE=1
 
 
