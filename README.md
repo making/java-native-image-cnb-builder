@@ -26,7 +26,7 @@ cd hello
 ./mvnw clean package -Dmaven.test.skip=true
 
 pack build foo \
-  --builder making/java-native-image-cnb-builder-test:${GITHUB_SHA} \
+  --builder making/java-native-image-cnb-builder \
   --path target/hello*.jar \
   -e BP_BOOT_NATIVE_IMAGE=1
 
