@@ -28,7 +28,7 @@ cd hello
 pack build foo \
   --builder making/java-native-image-cnb-builder \
   --path target/hello*.jar \
-  -e BP_BOOT_NATIVE_IMAGE=1
+  -e BP_BOOT_NATIVE_IMAGE=1 --no-pull
 
 
 docker run --rm \
